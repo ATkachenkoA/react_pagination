@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import './App.css';
 import { getNumbers } from './utils';
 import { Pagination } from './components/Pagination';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const items = getNumbers(1, 42).map(n => `Item ${n}`);
+
+const perPageOptions = [3, 5, 10, 20];
 
 function getVisibleItems(
   allItems: string[],
@@ -18,8 +21,30 @@ function getVisibleItems(
 }
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [perPage, setPerPage] = useState<number>(5);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pageFromUrl = Number(searchParams.get('page'));
+  const perPageFromUrl = Number(searchParams.get('perPage'));
+
+  const perPage = perPageOptions.includes(perPageFromUrl) ? perPageFromUrl : 5;
+
+  const maxPage = Math.ceil(items.length / perPage);
+
+  const currentPage =
+    pageFromUrl >= 1 && pageFromUrl <= maxPage ? pageFromUrl : 1;
+
+  const changePage = (page: number) => {
+    setSearchParams({
+      page: String(page),
+      perPage: String(perPage),
+    });
+  };
+
+  const changePerPage = (newPerPage: number) => {
+    setSearchParams({
+      page: '1',
+      perPage: String(newPerPage),
+    });
+  };
 
   const visibleItems = getVisibleItems(items, currentPage, perPage);
 
@@ -40,8 +65,7 @@ export const App: React.FC = () => {
             className="form-control"
             value={perPage}
             onChange={e => {
-              setPerPage(Number(e.target.value));
-              setCurrentPage(1);
+              changePerPage(Number(e.target.value));
             }}
           >
             <option value="3">3</option>
@@ -60,7 +84,7 @@ export const App: React.FC = () => {
         total={items.length}
         perPage={perPage}
         currentPage={currentPage}
-        onPageChange={setCurrentPage}
+        onPageChange={changePage}
       />
 
       <ul>
